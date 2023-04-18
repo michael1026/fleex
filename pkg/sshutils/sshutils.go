@@ -176,7 +176,7 @@ func GetConnectionBuild(ip string, port int, username string, password string) (
 }
 
 func Connect(addr, user, password string) (*Connection, error) {
-	privateSsh := viper.GetString("private-ssh-file")
+	privateSsh := "id_rsa"
 	sshConfig := &ssh.ClientConfig{
 		User: user,
 		Auth: []ssh.AuthMethod{

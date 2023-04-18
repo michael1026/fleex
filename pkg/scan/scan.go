@@ -3,8 +3,8 @@ package scan
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -39,10 +39,10 @@ func lineCounter(r io.Reader) (int, error) {
 	}
 }
 
-func GetLine(filename string, names chan string, readerr chan error) {
+func GetLine(filename string, names chan string, readerr chan error) error {
 	file, err := os.Open(filename)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer file.Close()
 
@@ -51,10 +51,12 @@ func GetLine(filename string, names chan string, readerr chan error) {
 		names <- scanner.Text()
 	}
 	readerr <- scanner.Err()
+
+	return nil
 }
 
 // Start runs a scan
-func Start(fleetName, command string, delete bool, input, outputPath, chunksFolder string, token string, port int, username, password string, provider controller.Provider) {
+func Start(fleetName, command string, delete bool, input, outputPath, chunksFolder string, token string, port int, username, password string, provider controller.Provider) error {
 	var isFolderOut bool
 	start := time.Now()
 
@@ -77,7 +79,7 @@ func Start(fleetName, command string, delete bool, input, outputPath, chunksFold
 
 	fleet := controller.GetFleet(fleetName, token, provider)
 	if len(fleet) < 1 {
-		utils.Log.Fatal("No fleet found")
+		return fmt.Errorf("No fleet found")
 	}
 
 	/////
@@ -86,13 +88,13 @@ func Start(fleetName, command string, delete bool, input, outputPath, chunksFold
 	file, err := os.Open(input)
 
 	if err != nil {
-		utils.Log.Fatal(err)
+		return err
 	}
 
 	linesCount, err := lineCounter(file)
 
 	if err != nil {
-		utils.Log.Fatal(err)
+		return err
 	}
 
 	utils.Log.Debug("Fleet count: ", len(fleet))
@@ -131,7 +133,7 @@ loop:
 
 		case err := <-readerr:
 			if err != nil {
-				utils.Log.Fatal(err)
+				return err
 			}
 			break loop
 		}
@@ -146,7 +148,7 @@ loop:
 	processGroup.Add(len(fleet))
 
 	for i := 0; i < len(fleet); i++ {
-		go func() {
+		go func() error {
 			for {
 				l := <-fleetNames
 				if l == nil {
@@ -157,7 +159,7 @@ loop:
 				// Send input file via SCP
 				err := scp.NewSCP(sshutils.GetConnection(l.IP, port, username, password).Client).SendFile(filepath.Join(tempFolderInput, "chunk-"+boxName), "/tmp/fleex-"+timeStamp+"-chunk-"+boxName)
 				if err != nil {
-					utils.Log.Fatal("Failed to send file: ", err)
+					return err
 				}
 
 				chunkInputFile := "/tmp/fleex-" + timeStamp + "-chunk-" + boxName
@@ -172,7 +174,7 @@ loop:
 
 				// Now download the output file
 				//utils.MakeFolder(filepath.Join(tempFolder, "chunk-out-"+boxName))
-				isFolderOut = SendSCP(chunkOutputFile, filepath.Join(tempFolder, "chunk-out-"+boxName), l.IP, port, username, password)
+				isFolderOut, _ = SendSCP(chunkOutputFile, filepath.Join(tempFolder, "chunk-out-"+boxName), l.IP, port, username, password)
 
 				// err = scp.NewSCP(sshutils.GetConnection(l.IP, port, username, password).Client).ReceiveFile(chunkOutputFile, filepath.Join(tempFolder, "chunk-out-"+boxName))
 				// if err != nil {
@@ -192,6 +194,7 @@ loop:
 
 			}
 			processGroup.Done()
+			return nil
 		}()
 	}
 
@@ -201,6 +204,10 @@ loop:
 
 	close(fleetNames)
 	processGroup.Wait()
+
+	if err != nil {
+		return err
+	}
 
 	// Scan done, process results
 	duration := time.Since(start)
@@ -218,20 +225,20 @@ loop:
 		//utils.RunCommand("rm -rf " + filepath.Join(tempFolder, "chunk-out-*"))
 		os.RemoveAll(tempFolder)
 	}
-
+	return nil
 }
 
-func SendSCP(source string, destination string, IP string, PORT int, username string, password string) bool {
+func SendSCP(source string, destination string, IP string, PORT int, username string, password string) (bool, error) {
 	err := scp.NewSCP(sshutils.GetConnection(IP, PORT, username, password).Client).ReceiveFile(source, destination)
 	if err != nil {
 		os.Remove(destination)
 		err := scp.NewSCP(sshutils.GetConnection(IP, PORT, username, password).Client).ReceiveDir(source, destination, nil)
 		if err != nil {
-			utils.Log.Fatal("SEND DIR ERROR: ", err)
+			return false, err
 		}
-		return true
+		return true, nil
 	}
-	return false
+	return false, nil
 }
 
 func SaveInFolder(inputPath string, outputPath string) {
