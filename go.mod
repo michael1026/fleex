@@ -1,4 +1,4 @@
-module github.com/FleexSecurity/fleex
+module github.com/michael1026/fleex
 
 go 1.17
 

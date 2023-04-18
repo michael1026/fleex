@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/FleexSecurity/fleex/pkg/controller"
-	"github.com/FleexSecurity/fleex/pkg/utils"
+	"github.com/michael1026/fleex/pkg/controller"
+	"github.com/michael1026/fleex/pkg/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

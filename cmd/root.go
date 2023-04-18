@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/FleexSecurity/fleex/pkg/services"
-	"github.com/FleexSecurity/fleex/pkg/utils"
+	"github.com/michael1026/fleex/pkg/services"
+	"github.com/michael1026/fleex/pkg/utils"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
