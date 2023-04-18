@@ -11,7 +11,7 @@ import (
 	"github.com/michael1026/fleex/pkg/provider"
 	"github.com/michael1026/fleex/pkg/sshutils"
 	"github.com/michael1026/fleex/pkg/utils"
-	"github.com/vultr/govultr/v2"
+	"github.com/vultr/govultr/v3"
 )
 
 type VultrService struct {
@@ -60,7 +60,7 @@ func (v VultrService) SpawnFleet(fleetName string, fleetCount int, image string,
 func (v VultrService) GetBoxes() (boxes []provider.Box, err error) {
 	listOptions := &govultr.ListOptions{PerPage: 100}
 	for {
-		instances, meta, err := v.Client.Instance.List(context.Background(), listOptions)
+		instances, meta, _, err := v.Client.Instance.List(context.Background(), listOptions)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -115,7 +115,7 @@ func (v VultrService) GetBox(boxName string) (provider.Box, error) {
 func (v VultrService) GetImages() (images []provider.Image) {
 	listOptions := &govultr.ListOptions{PerPage: 100}
 	for {
-		vultrImages, meta, err := v.Client.Snapshot.List(context.Background(), listOptions)
+		vultrImages, meta, _, err := v.Client.Snapshot.List(context.Background(), listOptions)
 
 		if err != nil {
 			utils.Log.Fatal(err)
@@ -323,7 +323,7 @@ func (v VultrService) spawnBox(name string, image string, region string, size st
 			Backups:    "disabled",
 		}
 	}
-	_, err = v.Client.Instance.Create(context.Background(), instanceOptions)
+	_, _, err = v.Client.Instance.Create(context.Background(), instanceOptions)
 
 	if err != nil {
 		return provider.ErrInvalidImage
@@ -336,7 +336,7 @@ func (v VultrService) CreateImage(diskID int, label string) error {
 		InstanceID:  fmt.Sprint(diskID),
 		Description: "Fleex build image",
 	}
-	_, err := v.Client.Snapshot.Create(context.Background(), snapshotOptions)
+	_, _, err := v.Client.Snapshot.Create(context.Background(), snapshotOptions)
 	if err != nil {
 		return err
 	}
@@ -351,7 +351,7 @@ func (v VultrService) getSSHKey() string {
 			Name:   "fleex_key",
 			SSHKey: fleex_key,
 		}
-		_, err := v.Client.SSHKey.Create(context.Background(), sshkeyOptions)
+		_, _, err := v.Client.SSHKey.Create(context.Background(), sshkeyOptions)
 		if err != nil {
 			utils.Log.Fatal(err)
 		}
@@ -364,7 +364,7 @@ func (v VultrService) KeyCheck(fleex_key string) string {
 	listOptions := &govultr.ListOptions{PerPage: 100}
 	var keyID string
 	for {
-		keys, meta, err := v.Client.SSHKey.List(context.Background(), listOptions)
+		keys, meta, _, err := v.Client.SSHKey.List(context.Background(), listOptions)
 
 		if err != nil {
 			utils.Log.Fatal(err)

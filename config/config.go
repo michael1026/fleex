@@ -6,7 +6,7 @@ import (
 
 	"github.com/digitalocean/godo"
 	"github.com/linode/linodego"
-	"github.com/vultr/govultr/v2"
+	"github.com/vultr/govultr/v3"
 	"golang.org/x/oauth2"
 )
 
