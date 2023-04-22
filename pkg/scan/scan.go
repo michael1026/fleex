@@ -228,6 +228,39 @@ loop:
 	return nil
 }
 
+func StartSingle(fleetName, command string, outputPath, token string, port int, username, password string, provider controller.Provider) error {
+	start := time.Now()
+
+	utils.Log.Info("Scan started!")
+
+	fleet := controller.GetFleet(fleetName, token, provider)
+	if len(fleet) < 1 {
+		return fmt.Errorf("No fleet found")
+	}
+
+	ip := fleet[0].IP
+
+	boxOutputFile := "/tmp/fleex-" + fleetName
+
+	// Replace labels and craft final command
+	finalCommand := command
+	finalCommand = strings.ReplaceAll(finalCommand, "{{OUTPUT}}", boxOutputFile)
+
+	sshutils.RunCommand(finalCommand, ip, port, username, password)
+
+	// Now download the output file
+	SendSCP(boxOutputFile, outputPath, ip, port, username, password)
+
+	// Remove input chunk file from remote box to save space
+	sshutils.RunCommand("sudo rm -rf "+boxOutputFile, ip, port, username, password)
+
+	// Scan done, process results
+	duration := time.Since(start)
+	utils.Log.Info("Scan done! Took ", duration, ". Output file: ", outputPath)
+
+	return nil
+}
+
 func SendSCP(source string, destination string, IP string, PORT int, username string, password string) (bool, error) {
 	err := scp.NewSCP(sshutils.GetConnection(IP, PORT, username, password).Client).ReceiveFile(source, destination)
 	if err != nil {
