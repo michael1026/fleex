@@ -240,17 +240,17 @@ func StartSingle(fleetName, command string, inputFile string, outputPath, token 
 
 	ip := fleet[0].IP
 
-	err := scp.NewSCP(sshutils.GetConnection(ip, port, username, password).Client).SendFile(inputFile, "/tmp/input.txt")
+	err := scp.NewSCP(sshutils.GetConnection(ip, port, username, password).Client).SendFile(inputFile, "~/input.txt")
 	if err != nil {
 		return err
 	}
 
-	boxOutputFile := "/tmp/fleex-" + fleetName
+	boxOutputFile := "~/fleex-" + fleetName
 
 	// Replace labels and craft final command
 	finalCommand := command
 	finalCommand = strings.ReplaceAll(finalCommand, "{{OUTPUT}}", boxOutputFile)
-	finalCommand = strings.ReplaceAll(finalCommand, "{{INPUT}}", "/tmp/input.txt")
+	finalCommand = strings.ReplaceAll(finalCommand, "{{INPUT}}", "~/input.txt")
 
 	sshutils.RunCommand(finalCommand, ip, port, username, password)
 
@@ -259,7 +259,7 @@ func StartSingle(fleetName, command string, inputFile string, outputPath, token 
 
 	// Remove input chunk file from remote box to save space
 	sshutils.RunCommand("sudo rm -rf "+boxOutputFile, ip, port, username, password)
-	sshutils.RunCommand("sudo rm -rf /tmp/input.txt", ip, port, username, password)
+	sshutils.RunCommand("sudo rm -rf ~/input.txt", ip, port, username, password)
 
 	// Scan done, process results
 	duration := time.Since(start)
