@@ -244,7 +244,7 @@ func StartSingle(fleetName, command string, inputFile string, inputDestination s
 		}
 	}
 
-	boxOutputFile := "~/fleex-" + fleetName
+	boxOutputFile := "/tmp/fleex-" + fleetName
 
 	// Replace labels and craft final command
 	finalCommand := command
