@@ -181,9 +181,6 @@ loop:
 				// 	utils.Log.Fatal("Failed to get file: ", err)
 				// }
 
-				// Remove input chunk file from remote box to save space
-				sshutils.RunCommand("sudo rm -rf "+chunkInputFile+" "+chunkOutputFile, l.IP, port, username, password)
-
 				if delete {
 					// TODO: Not the best way to delete a box, if this program crashes/is stopped
 					// before reaching this line the box won't be deleted. It's better to setup
@@ -261,7 +258,6 @@ func StartSingle(fleetName, command string, inputFile string, inputDestination s
 
 	// Remove input chunk file from remote box to save space
 	sshutils.RunCommand("sudo rm -rf "+boxOutputFile, ip, port, username, password)
-	sshutils.RunCommand("sudo rm -rf "+inputDestination, ip, port, username, password)
 
 	// Scan done, process results
 	duration := time.Since(start)
