@@ -228,7 +228,7 @@ loop:
 	return nil
 }
 
-func StartSingle(fleetName, command string, inputFile string, outputPath, token string, port int, username, password string, provider controller.Provider) error {
+func StartSingle(fleetName, command string, inputFile string, inputDestination string, outputPath, token string, port int, username, password string, provider controller.Provider) error {
 	start := time.Now()
 
 	utils.Log.Info("Scan started!")
@@ -240,9 +240,11 @@ func StartSingle(fleetName, command string, inputFile string, outputPath, token 
 
 	ip := fleet[0].IP
 
-	err := scp.NewSCP(sshutils.GetConnection(ip, port, username, password).Client).SendFile(inputFile, "~/input.txt")
-	if err != nil {
-		return err
+	if inputFile != "" {
+		err := scp.NewSCP(sshutils.GetConnection(ip, port, username, password).Client).SendFile(inputFile, inputDestination)
+		if err != nil {
+			return err
+		}
 	}
 
 	boxOutputFile := "~/fleex-" + fleetName
@@ -250,7 +252,7 @@ func StartSingle(fleetName, command string, inputFile string, outputPath, token 
 	// Replace labels and craft final command
 	finalCommand := command
 	finalCommand = strings.ReplaceAll(finalCommand, "{{OUTPUT}}", boxOutputFile)
-	finalCommand = strings.ReplaceAll(finalCommand, "{{INPUT}}", "~/input.txt")
+	finalCommand = strings.ReplaceAll(finalCommand, "{{INPUT}}", inputDestination)
 
 	sshutils.RunCommand(finalCommand, ip, port, username, password)
 
@@ -259,7 +261,7 @@ func StartSingle(fleetName, command string, inputFile string, outputPath, token 
 
 	// Remove input chunk file from remote box to save space
 	sshutils.RunCommand("sudo rm -rf "+boxOutputFile, ip, port, username, password)
-	sshutils.RunCommand("sudo rm -rf ~/input.txt", ip, port, username, password)
+	sshutils.RunCommand("sudo rm -rf "+inputDestination, ip, port, username, password)
 
 	// Scan done, process results
 	duration := time.Since(start)
@@ -271,6 +273,7 @@ func StartSingle(fleetName, command string, inputFile string, outputPath, token 
 func SendSCP(source string, destination string, IP string, PORT int, username string, password string) (bool, error) {
 	err := scp.NewSCP(sshutils.GetConnection(IP, PORT, username, password).Client).ReceiveFile(source, destination)
 	if err != nil {
+		fmt.Printf("Error receiving single file: %s. Trying directory\n", err)
 		os.Remove(destination)
 		err := scp.NewSCP(sshutils.GetConnection(IP, PORT, username, password).Client).ReceiveDir(source, destination, nil)
 		if err != nil {
