@@ -230,7 +230,12 @@ func (d DigitaloceanService) RunCommand(name, command string, port int, username
 		if box.Label == name {
 			// It's a single box
 			boxIP := box.IP
-			sshutils.RunCommand(command, boxIP, port, username, password)
+			_, err = sshutils.RunCommand(command, boxIP, port, username, password)
+
+			if err != nil {
+				return err
+			}
+
 			return nil
 		}
 	}
@@ -251,7 +256,12 @@ func (d DigitaloceanService) RunCommand(name, command string, port int, username
 					break
 				}
 				boxIP := box.IP
-				sshutils.RunCommand(command, boxIP, port, username, password)
+				_, err := sshutils.RunCommand(command, boxIP, port, username, password)
+
+				if err != nil {
+					fmt.Printf("Error running command on %s: %v\n", box.Label, err)
+					continue
+				}
 			}
 			processGroup.Done()
 		}()

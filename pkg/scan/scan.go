@@ -177,7 +177,11 @@ loop:
 				finalCommand = strings.ReplaceAll(finalCommand, "{{INPUT}}", chunkInputFile)
 				finalCommand = strings.ReplaceAll(finalCommand, "{{OUTPUT}}", chunkOutputFile)
 
-				sshutils.RunCommand(finalCommand, l.IP, port, username, password)
+				_, err = sshutils.RunCommand(finalCommand, l.IP, port, username, password)
+
+				if err != nil {
+					return err
+				}
 
 				// Now download the output file
 				//utils.MakeFolder(filepath.Join(tempFolder, "chunk-out-"+boxName))
@@ -271,7 +275,11 @@ func StartSingle(fleetName, command string, inputFile string, inputDestination s
 	SendSCP(boxOutputFile, outputPath, ip, port, username, password)
 
 	// Remove input chunk file from remote box to save space
-	sshutils.RunCommand("sudo rm -rf "+boxOutputFile, ip, port, username, password)
+	_, err := sshutils.RunCommand("sudo rm -rf "+boxOutputFile, ip, port, username, password)
+
+	if err != nil {
+		return err
+	}
 
 	// Scan done, process results
 	duration := time.Since(start)
