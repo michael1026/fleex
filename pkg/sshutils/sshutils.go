@@ -58,9 +58,9 @@ func RunCommand(command string, ip string, port int, username string, password s
 		}
 		break
 	}
-	conn.sendCommands(command)
+	_, err = conn.sendCommands(command)
 
-	return conn, nil
+	return conn, err
 }
 
 func RunCommandWithPassword(command string, ip string, port int, username string, password string) *Connection {
@@ -99,7 +99,7 @@ var termCount int
 func (conn *Connection) sendCommands(cmds ...string) ([]byte, error) {
 	session, err := conn.NewSession()
 	if err != nil {
-		utils.Log.Fatal("sendCommands: ", err)
+		return nil, err
 	}
 	defer session.Close()
 
