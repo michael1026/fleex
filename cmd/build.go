@@ -148,7 +148,13 @@ var buildCmd = &cobra.Command{
 				}
 			}
 
-			err = scp.NewSCP(sshutils.GetConnection(boxIP, 22, "root", "1337superPass").Client).SendDir(c.Config.Source, c.Config.Destination, nil)
+			connection, err := sshutils.GetConnection(boxIP, 22, "root", "1337superPass")
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			err = scp.NewSCP(connection.Client).SendDir(c.Config.Source, c.Config.Destination, nil)
 			if err != nil {
 				log.Fatal(err)
 			}

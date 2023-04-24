@@ -157,7 +157,14 @@ loop:
 				boxName := l.Label
 
 				// Send input file via SCP
-				err := scp.NewSCP(sshutils.GetConnection(l.IP, port, username, password).Client).SendFile(filepath.Join(tempFolderInput, "chunk-"+boxName), "/tmp/fleex-"+timeStamp+"-chunk-"+boxName)
+				connection, err := sshutils.GetConnection(l.IP, port, username, password)
+
+				if err != nil {
+					fmt.Printf("Error getting connection: %s\n", err)
+					return err
+				}
+
+				err = scp.NewSCP(connection.Client).SendFile(filepath.Join(tempFolderInput, "chunk-"+boxName), "/tmp/fleex-"+timeStamp+"-chunk-"+boxName)
 				if err != nil {
 					return err
 				}
@@ -238,7 +245,14 @@ func StartSingle(fleetName, command string, inputFile string, inputDestination s
 	ip := fleet[0].IP
 
 	if inputFile != "" {
-		err := scp.NewSCP(sshutils.GetConnection(ip, port, username, password).Client).SendFile(inputFile, inputDestination)
+		connection, err := sshutils.GetConnection(fleet[0].IP, port, username, password)
+
+		if err != nil {
+			fmt.Printf("Error getting connection: %s\n", err)
+			return err
+		}
+
+		err = scp.NewSCP(connection.Client).SendFile(inputFile, inputDestination)
 		if err != nil {
 			return err
 		}
@@ -267,11 +281,18 @@ func StartSingle(fleetName, command string, inputFile string, inputDestination s
 }
 
 func SendSCP(source string, destination string, IP string, PORT int, username string, password string) (bool, error) {
-	err := scp.NewSCP(sshutils.GetConnection(IP, PORT, username, password).Client).ReceiveFile(source, destination)
+	connection, err := sshutils.GetConnection(IP, PORT, username, password)
+
+	if err != nil {
+		fmt.Printf("Error getting connection: %s\n", err)
+		return false, err
+	}
+
+	err = scp.NewSCP(connection.Client).ReceiveFile(source, destination)
 	if err != nil {
 		fmt.Printf("Error receiving single file: %s. Trying directory\n", err)
 		os.Remove(destination)
-		err := scp.NewSCP(sshutils.GetConnection(IP, PORT, username, password).Client).ReceiveDir(source, destination, nil)
+		err := scp.NewSCP(connection.Client).ReceiveDir(source, destination, nil)
 		if err != nil {
 			return false, err
 		}
