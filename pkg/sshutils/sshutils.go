@@ -45,7 +45,7 @@ func SSHFingerprintGen(publicSSH string) string {
 	return f
 }
 
-func RunCommand(command string, ip string, port int, username string, password string) *Connection {
+func RunCommand(command string, ip string, port int, username string, password string) (*Connection, error) {
 	var conn *Connection
 	var err error
 	for retries := 0; retries < 3; retries++ {
@@ -54,13 +54,13 @@ func RunCommand(command string, ip string, port int, username string, password s
 			if strings.Contains(err.Error(), "connection refused") && retries < 3 {
 				continue
 			}
-			utils.Log.Fatal("RunCommand: ", err)
+			return nil, fmt.Errorf("RunCommand: %v", err)
 		}
 		break
 	}
 	conn.sendCommands(command)
 
-	return conn
+	return conn, nil
 }
 
 func RunCommandWithPassword(command string, ip string, port int, username string, password string) *Connection {
