@@ -111,7 +111,12 @@ var buildCmd = &cobra.Command{
 
 			for {
 				stillNotReady := false
-				fleets := controller.GetFleet(fleetName+"-1", token, provider)
+				fleets, err := controller.GetFleet(fleetName+"-1", token, provider)
+
+				if err != nil {
+					log.Fatal(err)
+				}
+
 				if len(fleets) == 0 {
 					stillNotReady = true
 				}

@@ -79,18 +79,27 @@ func ListBoxes(token string, provider Provider) {
 }
 
 // DeleteFleet deletes a whole fleet or a single box
-func DeleteFleet(name string, token string, provider Provider) {
+func DeleteFleet(name string, token string, provider Provider) error {
 	c := GetProviderController(provider, token)
 	err := c.Service.DeleteFleet(name)
 	if err != nil {
-		utils.Log.Fatal(err)
+		return err
 	}
 
 	time.Sleep(1 * time.Second)
-	for len(GetFleet(name, token, provider)) > 0 {
+
+	fleet, err := GetFleet(name, token, provider)
+
+	if err != nil {
+		return err
+	}
+
+	for len(fleet) > 0 {
 		time.Sleep(1 * time.Second)
 	}
 	utils.Log.Info("Fleet/Box deleted!")
+
+	return nil
 }
 
 // ListImages prints a list of available private images of a provider
@@ -119,13 +128,13 @@ func CreateImage(token string, provider Provider, diskID string, label string) {
 	}
 }
 
-func GetFleet(fleetName string, token string, provider Provider) []provider.Box {
+func GetFleet(fleetName string, token string, provider Provider) ([]provider.Box, error) {
 	c := GetProviderController(provider, token)
 	fleet, err := c.Service.GetFleet(fleetName)
 	if err != nil {
-		utils.Log.Fatal(err)
+		return nil, err
 	}
-	return fleet
+	return fleet, nil
 }
 
 func GetBox(boxName string, token string, provider Provider) (provider.Box, error) {
@@ -133,26 +142,32 @@ func GetBox(boxName string, token string, provider Provider) (provider.Box, erro
 	return c.Service.GetBox(boxName)
 }
 
-func RunCommand(name, command, token string, port int, username, password string, provider Provider) {
+func RunCommand(name, command, token string, port int, username, password string, provider Provider) error {
 	c := GetProviderController(provider, token)
 	err := c.Service.RunCommand(name, command, port, username, password)
 	if err != nil {
-		utils.Log.Fatal(err)
+		return err
 	}
+	return nil
 }
 
-func DeleteBoxByID(id string, token string, provider Provider) {
+func DeleteBoxByID(id string, token string, provider Provider) error {
 	c := GetProviderController(provider, token)
 	err := c.Service.DeleteBoxByID(id)
 	if err != nil {
-		utils.Log.Fatal(err)
+		return err
 	}
+	return nil
 }
 
-func SpawnFleet(fleetName string, fleetCount int, image string, region string, size string, sshFingerprint string, tags []string, token string, skipWait bool, provider Provider, build bool) {
+func SpawnFleet(fleetName string, fleetCount int, image string, region string, size string, sshFingerprint string, tags []string, token string, skipWait bool, provider Provider, build bool) error {
 	controller := GetProviderController(provider, token)
-	startFleet := GetFleet(fleetName, token, provider)
+	startFleet, err := GetFleet(fleetName, token, provider)
 	finalFleetSize := len(startFleet) + fleetCount
+
+	if err != nil {
+		return err
+	}
 
 	if len(startFleet) > 0 {
 		utils.Log.Info("Increasing fleet ", fleetName, " from size ", len(startFleet), " to ", finalFleetSize)
@@ -175,7 +190,12 @@ func SpawnFleet(fleetName string, fleetCount int, image string, region string, s
 		utils.Log.Info("All spawn requests sent! Now waiting for all boxes to become ready")
 		for {
 			stillNotReady := false
-			fleet := GetFleet(fleetName, token, provider)
+			fleet, err := GetFleet(fleetName, token, provider)
+
+			if err != nil {
+				return err
+			}
+
 			if len(fleet) == finalFleetSize {
 				for i := range fleet {
 					if (provider == PROVIDER_DIGITALOCEAN && fleet[i].Status != "active") || (provider == PROVIDER_LINODE && fleet[i].Status != "running") || (provider == PROVIDER_VULTR && fleet[i].Status != "active") {
@@ -195,6 +215,7 @@ func SpawnFleet(fleetName string, fleetCount int, image string, region string, s
 		utils.Log.Info("All boxes ready!")
 
 	}
+	return nil
 }
 
 func SSH(boxName, username string, port int, sshKey string, token string, provider Provider) {

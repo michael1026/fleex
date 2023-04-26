@@ -64,7 +64,12 @@ var scpCmd = &cobra.Command{
 			}
 		}
 
-		fleets := controller.GetFleet(nameFlag, token, provider)
+		fleets, err := controller.GetFleet(nameFlag, token, provider)
+
+		if err != nil {
+			utils.Log.Error(err)
+		}
+
 		if len(fleets) == 0 {
 			utils.Log.Fatal("Box not found")
 		}

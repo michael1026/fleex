@@ -77,7 +77,12 @@ func Start(fleetName, command string, delete bool, input, outputPath, chunksFold
 
 	// Input file to string
 
-	fleet := controller.GetFleet(fleetName, token, provider)
+	fleet, err := controller.GetFleet(fleetName, token, provider)
+
+	if err != nil {
+		return err
+	}
+
 	if len(fleet) < 1 {
 		return fmt.Errorf("No fleet found")
 	}
@@ -241,7 +246,12 @@ func StartSingle(fleetName, command string, inputFile string, inputDestination s
 
 	utils.Log.Info("Scan started!")
 
-	fleet := controller.GetFleet(fleetName, token, provider)
+	fleet, err := controller.GetFleet(fleetName, token, provider)
+
+	if err != nil {
+		return err
+	}
+
 	if len(fleet) < 1 {
 		return fmt.Errorf("No fleet found")
 	}
@@ -275,7 +285,7 @@ func StartSingle(fleetName, command string, inputFile string, inputDestination s
 	SendSCP(boxOutputFile, outputPath, ip, port, username, password)
 
 	// Remove input chunk file from remote box to save space
-	_, err := sshutils.RunCommand("sudo rm -rf "+boxOutputFile, ip, port, username, password)
+	_, err = sshutils.RunCommand("sudo rm -rf "+boxOutputFile, ip, port, username, password)
 
 	if err != nil {
 		return err
