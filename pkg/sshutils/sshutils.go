@@ -58,6 +58,11 @@ func RunCommand(command string, ip string, port int, username string, password s
 		}
 		break
 	}
+
+	if conn == nil {
+		return nil, fmt.Errorf("Unable to establish connection.")
+	}
+
 	_, err = conn.sendCommands(command)
 
 	return conn, err
@@ -190,11 +195,6 @@ func Connect(addr, user, password string) (*Connection, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	if conn == nil {
-		return nil, fmt.Errorf("Unable to establish connection.")
-	}
-
 	return &Connection{conn}, nil
 
 }
@@ -213,11 +213,6 @@ func ConnectWithPassword(addr, user, password string) (*Connection, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	if conn == nil {
-		return nil, fmt.Errorf("Unable to establish connection.")
-	}
-
 	return &Connection{conn}, nil
 
 }
